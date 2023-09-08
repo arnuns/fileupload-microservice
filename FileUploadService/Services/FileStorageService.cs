@@ -38,9 +38,9 @@ public class FileStorageService : IFileStorageService
             throw new AppException("Invalid file format.");
         var fileExtension = Path.GetExtension(file.FileName);
         if (string.IsNullOrEmpty(fileExtension))
-            throw new AppException("Invalid file format.");
+            throw new AppException("Invalid file extension.");
         if (ConvertBytesToMegabytes(file.Length) > _fileSettings.MaximumFileSize)
-            throw new AppException($"The maximum size for upload is {_fileSettings.MaximumFileSize} MB.");
+            throw new AppException("File size exceeds the allowed limit.");
         try
         {
             string path = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, _fileSettings.Directory));

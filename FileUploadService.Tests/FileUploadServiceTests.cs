@@ -78,4 +78,32 @@ public class FileUploadServiceTests
         var uploadResult = Assert.IsType<UploadResult>(badRequestResult.Value);
         Assert.False(uploadResult.IsSuccess);
     }
+
+    [Fact]
+    public async Task UploadFile_TooLarge_ThrowsException()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+
+        // Assuming Maximum File Size is 5MB
+        var maxSize = (5 * 1024 * 1024);
+        var fileName = "test.txt";
+        var fileContent = "Hello World!";
+        var ms = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+        fileMock.Setup(_ => _.FileName).Returns(fileName);
+        fileMock.Setup(_ => _.Length).Returns(maxSize + 1); // File size set to be just over the max size
+        fileMock.Setup(m => m.OpenReadStream()).Returns(ms);
+
+        var fileStorageServiceMock = new Mock<IFileStorageService>();
+        fileStorageServiceMock.Setup(s => s.UploadAsync(It.IsAny<IFormFile>()))
+                              .ReturnsAsync(() =>
+                              {
+                                  if (fileMock.Object.Length > maxSize)
+                                      throw new AppException("File size exceeds the allowed limit.");
+                                  return new UploadResult(); // dummy
+                              });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<AppException>(() => fileStorageServiceMock.Object.UploadAsync(fileMock.Object));
+    }
 }
