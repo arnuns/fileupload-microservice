@@ -10,11 +10,14 @@ public class UtcPlus7Converter : JsonConverter<DateTime>
         if (reader.TokenType != JsonToken.String)
             throw new JsonSerializationException("Expected string type");
 
-        if (DateTime.TryParse((string)reader.Value, out DateTime parsedDateTime))
+        var dateTimeStr = reader.Value?.ToString();
+        if (DateTime.TryParse(dateTimeStr, out DateTime dateTime))
         {
-            return parsedDateTime.AddHours(-7).ToUniversalTime();
+            // Check if the DateTime is in UTC before applying the offset conversion
+            if (dateTime.Kind == DateTimeKind.Utc)
+                return dateTime.AddHours(7);
+            return dateTime;  // Return the dateTime without any modification if it's not UTC
         }
-
         throw new JsonSerializationException("Invalid date format");
     }
 
