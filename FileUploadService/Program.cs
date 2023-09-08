@@ -30,6 +30,7 @@ if (string.IsNullOrEmpty(connectionString))
 builder.Services.AddDbContext<FileUploadContext>(opt => opt.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
@@ -42,6 +43,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.TryAddScoped<IFileStorageService, FileStorageService>();
+builder.Services.TryAddTransient<IEmailService, EmailService>();
 
 builder.Services.TryAddScoped<IFileUploadRepository, FileUploadRepository>();
 builder.Services.TryAddScoped<IUnitOfWork, UnitOfWork>();

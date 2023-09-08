@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IO;
 
-
 namespace FileUploadService.Services;
 
 public interface IFileStorageService
@@ -70,7 +69,7 @@ public class FileStorageService : IFileStorageService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while uploading the file.");
+            _logger.LogError(ex, "An error occurred while uploading file.");
             return new UploadResult {};
         }
     }

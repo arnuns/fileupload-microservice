@@ -26,6 +26,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - PSQL_CONNECTION_STRING=${PSQL_CONNECTION_STRING}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
     networks:
       - my-network
     restart: always

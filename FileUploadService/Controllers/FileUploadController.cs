@@ -9,15 +9,23 @@ namespace FileUploadService.Controllers;
 public class FileUploadController : ControllerBase
 {
     private readonly IFileStorageService _fileStorageService;
-    public FileUploadController(IFileStorageService fileStorageService)
+    private readonly IEmailService _emailService;
+    public FileUploadController(IFileStorageService fileStorageService, IEmailService emailService)
     {
         _fileStorageService = fileStorageService;
+        _emailService = emailService;
+
     }
 
     [HttpPost]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {
         var result = await _fileStorageService.UploadAsync(file);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        if (result.IsSuccess)
+        {
+            await _emailService.SendAsync("recipient@example.com", "File Uploaded Successfully", "A new file has been uploaded to destination.");
+            return Ok(result);
+        }
+        return BadRequest(result);
     }
 }
