@@ -1,3 +1,5 @@
+using System;
+
 namespace FileUploadService.Entities;
 
 public class FileUpload

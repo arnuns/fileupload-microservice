@@ -16,7 +16,7 @@ public class FileUploadController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {
-        await _fileStorageService.UploadAsync(file);
-        return Ok();
+        var result = await _fileStorageService.UploadAsync(file);
+        return Ok(result);
     }
 }

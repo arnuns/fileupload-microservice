@@ -4,21 +4,25 @@ using FileUploadService.Entities.Repositories;
 using FileUploadService.Models;
 using FileUploadService.Middlewares;
 using FileUploadService.Services;
+using FileUploadService.Utils;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOptions<FileSettings>().BindConfiguration("FileSettings");
+
 var connectionString = Environment.GetEnvironmentVariable("PSQL_CONNECTION_STRING");
 if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Connection string was not found.");
-builder.Services.AddDbContext<FileUploadContext>(opt => opt.UseNpgsql(connectionString));
+builder.Services.AddDbContext<FileUploadContext>(opt => opt.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
 
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
+    options.SerializerSettings.Converters.Add(new UtcPlus7Converter());
     options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 });
