@@ -1,4 +1,6 @@
-namespace FileUploadService.Entities.DbContexts;
+using FileUploadService.Entities.DbContexts;
+
+namespace FileUploadService.Entities;
 
 public interface IUnitOfWork
 {
