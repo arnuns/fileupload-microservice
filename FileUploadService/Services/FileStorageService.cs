@@ -1,6 +1,7 @@
 using FileUploadService.Entities;
 using FileUploadService.Entities.Repositories;
 using FileUploadService.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IO;
 
@@ -9,25 +10,29 @@ namespace FileUploadService.Services;
 
 public interface IFileStorageService
 {
-    Task<FileUpload> UploadAsync(IFormFile file);
+    Task<UploadResult> UploadAsync(IFormFile file);
 }
 
 public class FileStorageService : IFileStorageService
 {
     private readonly FileSettings _fileSettings;
     private readonly IFileUploadRepository _fileUploadRepository;
+    private readonly ILogger<FileStorageService> _logger;
     private readonly IUnitOfWork _unitOfWork;
     public FileStorageService(
         IOptions<FileSettings> options,
         IFileUploadRepository fileUploadRepository,
+        ILogger<FileStorageService> logger,
         IUnitOfWork unitOfWork)
     {
         _fileSettings = options.Value;
         _fileUploadRepository = fileUploadRepository;
+        _logger = logger;
+
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<FileUpload> UploadAsync(IFormFile file)
+    public async Task<UploadResult> UploadAsync(IFormFile file)
     {
         if (file == null || file.Length <= 0)
             throw new AppException("Invalid file format.");
@@ -57,11 +62,16 @@ public class FileStorageService : IFileStorageService
             };
             await _fileUploadRepository.AddAsync(fileUpload);
             await _unitOfWork.CompleteAsync();
-            return fileUpload;
+            return new UploadResult 
+            {
+                IsSuccess = true,
+                File = fileUpload
+            };
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"An error occurred when copying file: {ex.Message}");
+            _logger.LogError(ex, "An error occurred while uploading the file.");
+            return new UploadResult {};
         }
     }
 

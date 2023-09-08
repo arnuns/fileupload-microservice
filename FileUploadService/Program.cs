@@ -5,11 +5,22 @@ using FileUploadService.Models;
 using FileUploadService.Middlewares;
 using FileUploadService.Services;
 using FileUploadService.Utils;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Setup Serilog configuration
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddOptions<FileSettings>().BindConfiguration("FileSettings");
 
