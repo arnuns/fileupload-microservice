@@ -1,3 +1,4 @@
+using FileUploadService.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileUploadService.Controllers;
@@ -6,13 +7,16 @@ namespace FileUploadService.Controllers;
 [Route("[controller]")]
 public class FileUploadController : ControllerBase
 {
-    public FileUploadController() {}
+    private readonly IFileStorageService _fileStorageService;
+    public FileUploadController(IFileStorageService fileStorageService) 
+    {
+        _fileStorageService = fileStorageService;
+    }
 
     [HttpPost]
-    public IActionResult UploadFile(IFormFile file)
+    public async Task<IActionResult> UploadFile(IFormFile file)
     {
-        if (file == null || file.Length <= 0)
-            return BadRequest("Invalid file");
-        return Ok("File uploaded successfully");
+        await _fileStorageService.UploadAsync(file);
+        return Ok();
     }
 }
