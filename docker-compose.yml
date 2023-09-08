@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  file-upload-service:
+    build:
+      context: ./FileUploadService
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - my-network
+
+networks:
+  my-network:
