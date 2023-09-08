@@ -1,13 +1,18 @@
 using FileUploadService.Entities;
+using FileUploadService.Entities.DbContexts;
 using FileUploadService.Entities.Repositories;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var connectionString = Environment.GetEnvironmentVariable("PSQL_CONNECTION_STRING");
+if (string.IsNullOrEmpty(connectionString))
+    throw new InvalidOperationException("Connection string was not found.");
+builder.Services.AddDbContext<FileUploadContext>(opt => opt.UseNpgsql(connectionString));
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -16,7 +21,6 @@ builder.Services.TryAddScoped<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

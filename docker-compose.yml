@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - TZ=Asia/Bangkok
+      - PGTZ=Asia/Bangkok
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - my-network
+    restart: always
+
   file-upload-service:
     build:
       context: ./FileUploadService
@@ -11,6 +27,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - my-network
+    restart: always
 
 networks:
   my-network:
