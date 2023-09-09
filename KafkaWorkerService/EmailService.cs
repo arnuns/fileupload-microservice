@@ -37,11 +37,13 @@ public class EmailService : IEmailService
                 Credentials = new NetworkCredential(_emailSettings.Sender, smtpPassword),
                 EnableSsl = true
             };
-            await client.SendMailAsync(mail);
+            // await client.SendMailAsync(mail);
+            await Task.Delay(TimeSpan.FromSeconds(3));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while sending mail.");
+            throw;
         }
     }
 }

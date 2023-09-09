@@ -12,17 +12,20 @@ public class KafkaFileUploadBackgroundService : BackgroundService
     private readonly KafkaSettings _kafkaSettings;
     private readonly AWSSettings _awsSettings;
     private readonly ILogger<KafkaFileUploadBackgroundService> _logger;
+    private readonly IEmailService _emailService;
 
     public KafkaFileUploadBackgroundService(
         IDbContextFactory<FileUploadContext> contextFactory,
         IOptions<KafkaSettings> kafkaSettings,
         IOptions<AWSSettings> awsSettings,
-        ILogger<KafkaFileUploadBackgroundService> logger)
+        ILogger<KafkaFileUploadBackgroundService> logger,
+        IEmailService emailService)
     {
         _contextFactory = contextFactory;
         _kafkaSettings = kafkaSettings.Value;
         _awsSettings = awsSettings.Value;
         _logger = logger;
+        _emailService = emailService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -83,6 +86,9 @@ public class KafkaFileUploadBackgroundService : BackgroundService
 
                     File.Delete(tempFilePath);
                     _logger.LogInformation("The temporary file has been deleted.");
+
+                    await _emailService.SendAsync("recipient@example.com", "File Upload Complete", "Your file has been successfully processed.");
+                    _logger.LogInformation("Email notification has been sent.");
                 }
             }
             catch (ConsumeException ex)
