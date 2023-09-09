@@ -1,6 +1,6 @@
 using System;
 
-namespace FileUploadService.Entities;
+namespace KafkaWorkerService.Entities;
 
 public class FileUpload
 {

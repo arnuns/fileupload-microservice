@@ -3,10 +3,8 @@ using Moq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using FileUploadService.Controllers;
-using FileUploadService.Entities;
 using FileUploadService.Models;
 using FileUploadService.Services;
-using System.IO;
 using System.Text;
 
 namespace FileUploadService.Tests;
@@ -29,13 +27,7 @@ public class FileUploadServiceTests
         fileStorageMock.Setup(service => service.UploadAsync(It.IsAny<IFormFile>()))
                        .ReturnsAsync(new UploadResult
                        {
-                           IsSuccess = true,
-                           File = new FileUpload
-                           {
-                               FileName = fileName,
-                               FilePath = $"/mocked/path/{fileName}",
-                               FileSize = ms.Length
-                           }
+                           IsSuccess = true
                        });
 
         var controller = new FileUploadController(fileStorageMock.Object);

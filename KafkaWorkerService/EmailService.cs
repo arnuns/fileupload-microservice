@@ -1,11 +1,8 @@
-using FileUploadService.Models;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
-using System.Threading.Tasks;
 
-
-namespace FileUploadService.Services;
+namespace KafkaWorkerService;
 
 public interface IEmailService
 {
@@ -15,13 +12,13 @@ public interface IEmailService
 public class EmailService : IEmailService
 {
     private readonly EmailSettings _emailSettings;
-    private readonly ILogger<FileStorageService> _logger;
+    private readonly ILogger<EmailService> _logger;
 
     public EmailService(
-        IOptions<EmailSettings> emailSettings,
-        ILogger<FileStorageService> logger)
+        IOptions<EmailSettings> options,
+        ILogger<EmailService> logger)
     {
-        _emailSettings = emailSettings.Value;
+        _emailSettings = options.Value;
         _logger = logger;
     }
 

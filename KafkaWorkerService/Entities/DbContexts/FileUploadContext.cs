@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using FileUploadService.Entities;
+using KafkaWorkerService.Entities;
 
-namespace FileUploadService.Entities.DbContexts;
+namespace KafkaWorkerService.Entities.DbContexts;
 
 public class FileUploadContext : DbContext
 {
     public FileUploadContext(DbContextOptions<FileUploadContext> options)
         : base(options) { }
 
-    public DbSet<FileUpload> FileUpload => Set<FileUpload>();
+    public DbSet<FileUpload> FileUpload { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     { 

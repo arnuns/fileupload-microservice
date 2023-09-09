@@ -21,15 +21,61 @@ services:
   file-upload-service:
     build:
       context: ./FileUploadService
+    volumes:
+      - shared-volume:/app/temps
     ports:
       - "80:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - PSQL_CONNECTION_STRING=${PSQL_CONNECTION_STRING}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
     networks:
       - my-network
     restart: always
+
+  file-upload-worker:
+    build:
+      context: ./KafkaWorkerService
+    volumes:
+      - shared-volume:/app/temps
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - PSQL_CONNECTION_STRING=${PSQL_CONNECTION_STRING}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - S3_REGION_ENDPOINT=${S3_REGION_ENDPOINT}
+    networks:
+      - my-network
+    restart: always
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - my-network
+    restart: always
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT
+      KAFKA_LISTENER_DOCKER_INTERNAL: 0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - my-network
+    ports:
+      - "9092:9092"
+    restart: always
+
+volumes:
+  shared-volume: 
 
 networks:
   my-network:
