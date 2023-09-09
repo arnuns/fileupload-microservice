@@ -27,6 +27,7 @@ services:
       - "80:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - my-network
     restart: always
