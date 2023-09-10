@@ -1,4 +1,5 @@
 using FileUploadService.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileUploadService.Controllers;
@@ -14,6 +15,7 @@ public class FileUploadController : ControllerBase
 
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {

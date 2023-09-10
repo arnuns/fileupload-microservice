@@ -8,6 +8,10 @@ using Serilog;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using FileUploadService.Entities.DbContexts;
+using Microsoft.EntityFrameworkCore;
+using FileUploadService.Entities.Repositories;
+using FileUploadService.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +21,11 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+var connectionString = Environment.GetEnvironmentVariable("PSQL_CONNECTION_STRING");
+if (string.IsNullOrEmpty(connectionString))
+    throw new InvalidOperationException("PSQL_CONNECTION_STRING envirornment variable not set.");
+builder.Services.AddDbContext<FileUploadContext>(opt => opt.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("KafkaSettings"));
@@ -31,7 +40,13 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.TryAddScoped<IUserService, UserService>();
 builder.Services.TryAddScoped<IFileStorageService, FileStorageService>();
+
+builder.Services.TryAddScoped<IUserRepository, UserRepository>();
+builder.Services.TryAddScoped<IUnitOfWork, UnitOfWork>();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHealthChecks();
 

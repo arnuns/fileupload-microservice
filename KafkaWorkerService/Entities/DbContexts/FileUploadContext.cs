@@ -8,10 +8,13 @@ public class FileUploadContext : DbContext
     public FileUploadContext(DbContextOptions<FileUploadContext> options)
         : base(options) { }
 
-    public DbSet<FileUpload> FileUpload { get; set; }
+    public DbSet<FileUpload> FileUpload => Set<FileUpload>();
+    public DbSet<User> User => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     { 
-        modelBuilder.Entity<FileUpload>().HasKey(f => f.Id);
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<FileUpload>().HasKey(e => e.Id);
+        modelBuilder.Entity<User>().HasKey(e => e.Id);
     }
 }

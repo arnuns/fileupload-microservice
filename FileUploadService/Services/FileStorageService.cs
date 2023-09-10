@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Confluent.Kafka;
 using FileUploadService.Models;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace FileUploadService.Services;
 
@@ -11,17 +13,21 @@ public interface IFileStorageService
 
 public class FileStorageService : IFileStorageService
 {
+
     private readonly FileSettings _fileSettings;
     private readonly KafkaSettings _kafkaSettings;
     private readonly ILogger<FileStorageService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     public FileStorageService(
         IOptions<FileSettings> fileSettings,
         IOptions<KafkaSettings> kafkaSettings,
-        ILogger<FileStorageService> logger)
+        ILogger<FileStorageService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _fileSettings = fileSettings.Value;
         _kafkaSettings = kafkaSettings.Value;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<UploadResult> UploadAsync(IFormFile file)
@@ -33,6 +39,10 @@ public class FileStorageService : IFileStorageService
             throw new AppException("Invalid file extension.");
         if (ConvertBytesToMegabytes(file.Length) > _fileSettings.MaximumFileSize)
             throw new AppException("File size exceeds the allowed limit.");
+        var identity = _httpContextAccessor.HttpContext?.User.Identity as ClaimsIdentity;
+        int userId;
+        if (identity == null || identity.FindFirst("id") == null || !int.TryParse(identity.FindFirst("id")?.Value!, out userId))
+            throw new AppException("Unauthorized.");
         try
         {
             string path = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, _fileSettings.Directory));
@@ -44,9 +54,10 @@ public class FileStorageService : IFileStorageService
             {
                 await file.CopyToAsync(fileStream);
             }
+            var messageObject = JsonConvert.SerializeObject(new { tempFilePath, userId });
             var producerConfig = new ProducerConfig { BootstrapServers = _kafkaSettings.BootstrapServers };
             using var producer = new ProducerBuilder<Null, string>(producerConfig).Build();
-            await producer.ProduceAsync(_kafkaSettings.Topic, new Message<Null, string> { Value = tempFilePath });
+            await producer.ProduceAsync(_kafkaSettings.Topic, new Message<Null, string> { Value = messageObject });
             producer.Flush(TimeSpan.FromSeconds(10));
 
             return new UploadResult { IsSuccess = true };
@@ -55,7 +66,7 @@ public class FileStorageService : IFileStorageService
         {
             var errorMessage = "An error occurred while uploading file.";
             _logger.LogError(ex, errorMessage);
-            return new UploadResult { ErrorMessage = errorMessage};
+            return new UploadResult { ErrorMessage = errorMessage };
         }
     }
 

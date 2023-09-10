@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using FileUploadService.Models;
+using FileUploadService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
@@ -12,46 +13,56 @@ namespace FileUploadService.Controllers;
 [Route("[controller]")]
 public class AuthController : ControllerBase
 {
-    public AuthController()
+    private readonly IUserService _userService;
+    private readonly ILogger<AuthController> _logger;
+    public AuthController(
+        IUserService userService,
+        ILogger<AuthController> logger)
     {
-
+        _userService = userService;
+        _logger = logger;
     }
 
-    [HttpPost("login")]
-    public IActionResult Login([FromBody] Login login)
+    // // Only in Development
+    // [HttpPost("[action]")]
+    // public async Task<IActionResult> Create([FromBody] Login login)
+    // {
+    //     if (string.IsNullOrEmpty(login.Email) || string.IsNullOrEmpty(login.Password))
+    //         return BadRequest();
+    //     await _userService.CreateUserAsync(login.Email, login.Password);
+    //     return Ok();
+    // }
+
+    [HttpPost("[action]")]
+    public async Task<IActionResult> Login([FromBody] Login login)
     {
-        if (login.Email == "arnun.s@outlook.com" && login.Password == "123456789")
+        if (string.IsNullOrEmpty(login.Email) || string.IsNullOrEmpty(login.Password))
+            return Unauthorized();
+        var user = await _userService.GetByEmailAsync(login.Email);
+        if (user != null && BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
         {
-            var userId = 1; // Get userId from email and password
-            var jwt = GenerateJwtToken(userId);
+            var token = GenerateJwtToken(user.Id);
             var refreshToken = GenerateRefreshToken();
-
-            // RefreshTokens.Add(new RefreshToken { Token = refreshToken, UserId = userId, ExpiryDate = DateTime.UtcNow.AddMinutes(60) });
-
-            return Ok(new { token = jwt, refreshToken });
+            await _userService.RefreshTokenAsync(user.Id, refreshToken, DateTime.UtcNow.AddMinutes(60));
+            user.Token = token;
+            user.RefreshToken = refreshToken;
+            return Ok(user);
         }
         return Unauthorized();
     }
 
-    // [HttpPost("refresh")]
-    // public IActionResult Refresh([FromBody] string refreshToken)
-    // {
-    //     var storedToken = RefreshTokens.FirstOrDefault(t => t.Token == refreshToken);
-    //     if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
-    //     {
-    //         return Unauthorized();
-    //     }
-
-    //     var userId = storedToken.UserId;
-    //     var user = new User { Id = userId };
-    //     var jwt = GenerateJwtToken(user.Id);
-    //     var newRefreshToken = GenerateRefreshToken();
-
-    //     RefreshTokens.Remove(storedToken);
-    //     RefreshTokens.Add(new RefreshToken { Token = newRefreshToken, UserId = userId, ExpiryDate = DateTime.UtcNow.AddMinutes(60) });
-
-    //     return Ok(new { token = jwt, refreshToken = newRefreshToken });
-    // }
+    [HttpPost("[action]")]
+    public async Task<IActionResult> Refresh([FromBody] Refresh refresh)
+    {
+        var storedToken = await _userService.GetUserRefreshTokenAsync(refresh.RefreshToken!);
+        if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
+            return Unauthorized();
+        var userId = storedToken.UserId;
+        var jwt = GenerateJwtToken(userId);
+        var newRefreshToken = GenerateRefreshToken();
+        var userRefreshToken = await _userService.RefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddMinutes(60));
+        return Ok(new { token = jwt, refreshToken = userRefreshToken.Token });
+    }
 
     private string GenerateJwtToken(int userId)
     {

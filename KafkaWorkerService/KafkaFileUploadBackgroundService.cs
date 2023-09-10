@@ -3,6 +3,7 @@ using KafkaWorkerService.Entities;
 using KafkaWorkerService.Entities.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace KafkaWorkerService;
 
@@ -47,7 +48,11 @@ public class KafkaFileUploadBackgroundService : BackgroundService
             try
             {
                 var consumeResult = consumer.Consume(stoppingToken);
-                var tempFilePath = consumeResult.Message.Value;
+                var messageObject = JsonConvert.DeserializeObject<FileUploadMessage>(consumeResult.Message.Value);
+                var tempFilePath = messageObject?.TempFilePath;
+                if (messageObject?.UserId == null)
+                    throw new ArgumentNullException("UserId is not set.");
+                var userId = messageObject.UserId.GetValueOrDefault();
                 if (File.Exists(tempFilePath))
                 {
                     // var s3BucketName = _awsSettings.BucketName;
@@ -65,12 +70,14 @@ public class KafkaFileUploadBackgroundService : BackgroundService
 
                     // await _s3Client.PutObjectAsync(putRequest, stoppingToken);
 
-                    _logger.LogInformation($"Temp: {tempFilePath}");
+                    _logger.LogInformation($"Temp: {tempFilePath}, UserId: {userId}");
                     _logger.LogInformation("The file has been successfully uploaded to S3.");
 
                     using var context = _contextFactory.CreateDbContext();
+                    var user = await context.User.FirstOrDefaultAsync(u => u.Id == userId);
                     var fileUpload = new FileUpload
                     {
+                        UserId = user.Id,
                         FileName = s3Key,
                         FilePath = filePath,
                         FileSize = fileLength,
@@ -87,14 +94,13 @@ public class KafkaFileUploadBackgroundService : BackgroundService
                     File.Delete(tempFilePath);
                     _logger.LogInformation("The temporary file has been deleted.");
 
-                    await _emailService.SendAsync("recipient@example.com", "File Upload Complete", "Your file has been successfully processed.");
+                    await _emailService.SendAsync(user.Email, "File Upload Complete", $"Your file has been successfully processed. ({filePath})");
                     _logger.LogInformation("Email notification has been sent.");
                 }
             }
             catch (ConsumeException ex)
             {
                 _logger.LogError(ex, "An error occurred while kafka processing a file.");
-                // retries here
             }
         }
 

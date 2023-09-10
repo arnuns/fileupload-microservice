@@ -6,9 +6,7 @@ public class Login
     public string? Password { get; set; }
 }
 
-public class RefreshToken
+public class Refresh
 {
-    public string? Token { get; set; }
-    public int? UserId { get; set; }
-    public DateTime ExpiryDate { get; set; }
+    public string? RefreshToken { get; set; }
 }

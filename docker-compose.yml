@@ -27,6 +27,7 @@ services:
       - "80:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - PSQL_CONNECTION_STRING=${PSQL_CONNECTION_STRING}
       - JWT_SECRET=${JWT_SECRET}
     networks:
       - my-network

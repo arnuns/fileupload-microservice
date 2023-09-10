@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS file_upload;
 CREATE TABLE file_upload (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
     file_name VARCHAR(255) NOT NULL,
     file_path VARCHAR(255) NOT NULL,
     file_size BIGINT NOT NULL,
@@ -24,11 +25,10 @@ CREATE TABLE "user" (
 );
 DROP TABLE IF EXISTS refresh_token;
 CREATE TABLE refresh_token (
+    token VARCHAR(255) PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    token VARCHAR(255) NOT NULL,
-    "expiry_date" TIMESTAMPTZ,
-
-    CONSTRAINT "refresh_token_pkey" PRIMARY KEY ("user_id")
+    "expiry_date" TIMESTAMPTZ
 );
 
+ALTER TABLE file_upload ADD CONSTRAINT "file_upload_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE refresh_token ADD CONSTRAINT "refresh_token_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
